@@ -1,0 +1,17 @@
+name: Deploy
+on:
+  push:
+    branches: [main]
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install Ansible
+        run: sudo apt-get update && sudo apt-get install -y ansible
+      - name: Run Ansible playbook
+        env:
+          PRIVATE_KEY: ${{ secrets.SERVER_SSH_KEY }}
+        run: |
+          echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
+          ansible-playbook -i inventory/hosts playbooks/common.yml --private-key private_key

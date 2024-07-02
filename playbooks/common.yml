@@ -1,0 +1,77 @@
+---
+- name: Common setup for all servers
+  hosts: all
+  become: yes
+  tasks:
+    - name: Update and upgrade apt packages
+      apt:
+        update_cache: yes
+        upgrade: dist
+
+    - name: Install Cockpit
+      apt:
+        name: cockpit
+        state: present
+
+    - name: Enable Cockpit service
+      systemd:
+        name: cockpit.socket
+        enabled: yes
+        state: started
+
+    - name: Install Docker
+      apt:
+        name: docker.io
+        state: present
+
+    - name: Start Docker service
+      systemd:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Pull and run Docker containers
+      docker_container:
+        name: "{{ item.name }}"
+        image: "{{ item.image }}"
+        state: started
+      loop:
+        - { name: container1, image: image1:latest }
+        - { name: container2, image: image2:latest }
+
+    - name: Install Prometheus
+      apt:
+        name: prometheus
+        state: present
+
+    - name: Install Grafana
+      apt:
+        deb: https://dl.grafana.com/enterprise/release/grafana-enterprise_11.1.0_amd64.deb
+
+    - name: Start Prometheus and Grafana services
+      systemd:
+        name: "{{ item }}"
+        state: started
+        enabled: yes
+      loop:
+        - prometheus
+        - grafana-server
+
+    - name: Install UFW
+      apt:
+        name: ufw
+        state: present
+
+    - name: Allow SSH
+      ufw:
+        rule: allow
+        port: "22"
+
+    - name: Allow Cockpit
+      ufw:
+        rule: allow
+        port: "9090"
+
+    - name: Enable UFW
+      ufw:
+        state: enabled
